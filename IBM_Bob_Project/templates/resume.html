@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Resume Analyser{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="max-width:960px">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="page-title mb-0"><i class="bi bi-file-earmark-person me-2 text-primary"></i>Resume Analyser</h1>
+      <p class="text-muted small mt-1">Upload your resume for instant AI-powered analysis</p>
+    </div>
+    <span class="watson-badge {% if watsonx_status == 'ok' %}watson-ok{% elif watsonx_status == 'no_credentials' %}watson-demo{% else %}watson-error{% endif %}">
+      <span class="status-dot"></span>
+      {% if watsonx_status == 'ok' %}AI Active{% else %}Demo Mode{% endif %}
+    </span>
+  </div>
+
+  <!-- Upload area -->
+  <div class="cc-card mb-4" id="uploadCard">
+    <div class="cc-card-body">
+      <div class="upload-dropzone" id="dropZone"
+           ondragover="event.preventDefault(); this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event)">
+        <div class="upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+        <h5 class="mt-3">Drag & Drop your resume here</h5>
+        <p class="text-muted">or click to browse</p>
+        <p class="text-muted small">Supports PDF, DOCX, DOC, TXT — max 5 MB</p>
+        <input type="file" id="resumeFile" class="d-none"
+               accept=".pdf,.docx,.doc,.txt"
+               onchange="handleFileSelect(this.files[0])"/>
+        <button class="btn btn-primary" onclick="document.getElementById('resumeFile').click()">
+          <i class="bi bi-folder2-open me-2"></i>Browse Files
+        </button>
+      </div>
+      <div class="selected-file d-none" id="selectedFile">
+        <i class="bi bi-file-earmark-text text-primary fs-3"></i>
+        <span id="fileName" class="ms-2 fw-semibold"></span>
+        <button class="btn btn-sm btn-primary ms-auto" onclick="analyseResume()">
+          <i class="bi bi-cpu me-2"></i>Analyse with AI
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="clearFile()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="d-none" id="progressArea">
+    <div class="cc-card mb-4">
+      <div class="cc-card-body text-center py-4">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <div class="fw-semibold">IBM Granite AI is analysing your resume…</div>
+        <p class="text-muted small mt-1">This usually takes 10–30 seconds</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="d-none" id="resultsArea">
+
+    <div class="row g-4 mb-4">
+      <!-- Score -->
+      <div class="col-md-4">
+        <div class="cc-card h-100 text-center">
+          <div class="cc-card-body py-4">
+            <div class="score-ring" id="scoreRing">
+              <svg viewBox="0 0 120 120" width="120" height="120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bs-border-color)" stroke-width="10"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#3b82d4" stroke-width="10"
+                        stroke-dasharray="314" stroke-dashoffset="314"
+                        stroke-linecap="round" transform="rotate(-90 60 60)"
+                        id="scoreCircle"/>
+              </svg>
+              <div class="score-value" id="scoreValue">0</div>
+            </div>
+            <div class="fw-bold mt-2">Resume Score</div>
+            <div class="text-muted small" id="scoreLabel">Analysing…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="col-md-8">
+        <div class="cc-card h-100">
+          <div class="cc-card-header"><i class="bi bi-bar-chart me-2 text-primary"></i>Quick Stats</div>
+          <div class="cc-card-body">
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="stat-box">
+                  <div id="wordCount" class="stat-big">—</div>
+                  <div class="stat-sm">Word Count</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="stat-box">
+                  <div id="skillCount" class="stat-big">—</div>
+                  <div class="stat-sm">Skills Found</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="stat-check" id="emailCheck"><i class="bi bi-envelope"></i> Email</div>
+              </div>
+              <div class="col-4">
+                <div class="stat-check" id="phoneCheck"><i class="bi bi-phone"></i> Phone</div>
+              </div>
+              <div class="col-4">
+                <div class="stat-check" id="linkedinCheck"><i class="bi bi-linkedin"></i> LinkedIn</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detected skills -->
+    <div class="cc-card mb-4" id="skillsCard">
+      <div class="cc-card-header"><i class="bi bi-lightning me-2 text-warning"></i>Detected Skills</div>
+      <div class="cc-card-body">
+        <div id="detectedSkills" class="d-flex flex-wrap gap-2"></div>
+      </div>
+    </div>
+
+    <!-- AI Feedback -->
+    <div class="cc-card mb-4" id="feedbackCard">
+      <div class="cc-card-header">
+        <i class="bi bi-robot me-2 text-info"></i>IBM Granite AI Feedback
+      </div>
+      <div class="cc-card-body">
+        <div id="aiFeedback" class="markdown-output"></div>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <button class="btn btn-outline-primary" onclick="clearFile()">
+        <i class="bi bi-arrow-counterclockwise me-2"></i>Analyse Another Resume
+      </button>
+      <a href="{{ url_for('roadmap') }}" class="btn btn-primary ms-2">
+        <i class="bi bi-map me-2"></i>View Career Roadmap
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedFile = null;
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFileSelect(f);
+}
+
+function handleFileSelect(f) {
+  if (!f) return;
+  const allowed = ['pdf', 'docx', 'doc', 'txt'];
+  const ext = f.name.split('.').pop().toLowerCase();
+  if (!allowed.includes(ext)) {
+    alert('Unsupported file type. Please upload PDF, DOCX, DOC, or TXT.');
+    return;
+  }
+  if (f.size > 5 * 1024 * 1024) { alert('File too large (max 5 MB).'); return; }
+  selectedFile = f;
+  document.getElementById('fileName').textContent = f.name;
+  document.getElementById('dropZone').classList.add('d-none');
+  document.getElementById('selectedFile').classList.remove('d-none');
+}
+
+function clearFile() {
+  selectedFile = null;
+  document.getElementById('resumeFile').value = '';
+  document.getElementById('selectedFile').classList.add('d-none');
+  document.getElementById('dropZone').classList.remove('d-none');
+  document.getElementById('resultsArea').classList.add('d-none');
+  document.getElementById('progressArea').classList.add('d-none');
+}
+
+async function analyseResume() {
+  if (!selectedFile) return;
+  document.getElementById('progressArea').classList.remove('d-none');
+  document.getElementById('resultsArea').classList.add('d-none');
+
+  const fd = new FormData();
+  fd.append('resume', selectedFile);
+
+  try {
+    const r = await fetch('/api/analyze-resume', {method: 'POST', body: fd});
+    const d = await r.json();
+    document.getElementById('progressArea').classList.add('d-none');
+    if (d.error) { alert('Error: ' + d.error); return; }
+    showResults(d);
+  } catch(e) {
+    document.getElementById('progressArea').classList.add('d-none');
+    alert('Network error: ' + e.message);
+  }
+}
+
+function showResults(d) {
+  document.getElementById('resultsArea').classList.remove('d-none');
+
+  // Score ring
+  const score = d.score || 0;
+  document.getElementById('scoreValue').textContent = score;
+  const circumference = 314;
+  const offset = circumference - (score / 100) * circumference;
+  document.getElementById('scoreCircle').style.strokeDashoffset = offset;
+  const labels = ['Needs Work', 'Fair', 'Good', 'Very Good', 'Excellent'];
+  document.getElementById('scoreLabel').textContent = labels[Math.min(4, Math.floor(score / 20))];
+
+  // Stats
+  document.getElementById('wordCount').textContent = d.word_count || 0;
+  document.getElementById('skillCount').textContent = (d.skills || []).length;
+  setCheck('emailCheck', d.has_email);
+  setCheck('phoneCheck', d.has_phone);
+  setCheck('linkedinCheck', d.has_linkedin);
+
+  // Skills
+  const sk = document.getElementById('detectedSkills');
+  sk.innerHTML = '';
+  (d.skills || []).forEach(s => {
+    const sp = document.createElement('span');
+    sp.className = 'skill-tag';
+    sp.textContent = s;
+    sk.appendChild(sp);
+  });
+  if (!(d.skills || []).length) sk.innerHTML = '<span class="text-muted">No recognised skills detected</span>';
+
+  // AI Feedback
+  document.getElementById('aiFeedback').innerHTML = marked.parse(d.ai_feedback || '');
+}
+
+function setCheck(id, ok) {
+  const el = document.getElementById(id);
+  el.className = 'stat-check ' + (ok ? 'check-ok' : 'check-fail');
+  el.querySelector ? null : null;
+  // prepend icon
+  el.innerHTML = el.innerHTML.replace(/(✓|✗)?\s*/, (ok ? '✓ ' : '✗ '));
+}
+</script>
+{% endblock %}

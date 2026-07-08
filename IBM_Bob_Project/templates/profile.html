@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="max-width:800px">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="page-title mb-0"><i class="bi bi-person-circle me-2 text-info"></i>My Profile</h1>
+      <p class="text-muted small mt-1">Manage your professional information</p>
+    </div>
+  </div>
+
+  <!-- Profile hero -->
+  <div class="cc-card profile-hero mb-4">
+    <div class="cc-card-body">
+      <div class="d-flex align-items-center gap-4">
+        <div class="profile-avatar">
+          <i class="bi bi-person-fill"></i>
+        </div>
+        <div>
+          <h3 class="mb-0 fw-bold">{{ profile.name }}</h3>
+          <div class="text-muted">{{ profile.title }}</div>
+          <div class="text-muted small">
+            <i class="bi bi-geo-alt me-1"></i>{{ profile.location }}
+            &nbsp;|&nbsp;
+            <i class="bi bi-briefcase me-1"></i>{{ profile.experience }}
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            {% if profile.github %}
+              <a href="{{ profile.github }}" target="_blank" class="btn btn-xs btn-outline-secondary">
+                <i class="bi bi-github me-1"></i>GitHub
+              </a>
+            {% endif %}
+            {% if profile.linkedin %}
+              <a href="{{ profile.linkedin }}" target="_blank" class="btn btn-xs btn-outline-primary">
+                <i class="bi bi-linkedin me-1"></i>LinkedIn
+              </a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="ms-auto text-center">
+          <div class="resume-score-badge">{{ profile.resume_score }}</div>
+          <div class="text-muted small">Resume Score</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit form -->
+  <div class="cc-card mb-4">
+    <div class="cc-card-header"><i class="bi bi-pencil me-2"></i>Edit Profile</div>
+    <div class="cc-card-body">
+      <form method="POST" action="{{ url_for('profile_page') }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Full Name</label>
+            <input type="text" name="name" class="form-control" value="{{ profile.name }}" required/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Professional Title</label>
+            <input type="text" name="title" class="form-control" value="{{ profile.title }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ profile.email }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Location</label>
+            <input type="text" name="location" class="form-control" value="{{ profile.location }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Years of Experience</label>
+            <input type="text" name="experience" class="form-control" value="{{ profile.experience }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Target Role</label>
+            <input type="text" name="target_role" class="form-control" value="{{ profile.target_role }}"/>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Bio</label>
+            <textarea name="bio" class="form-control" rows="3">{{ profile.bio }}</textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">
+              Skills
+              <small class="text-muted fw-normal ms-1">(comma-separated)</small>
+            </label>
+            <input type="text" name="skills" class="form-control"
+                   value="{{ profile.skills | join(', ') }}"
+                   placeholder="Python, JavaScript, Docker…"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">GitHub URL</label>
+            <input type="url" name="github" class="form-control" value="{{ profile.github }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">LinkedIn URL</label>
+            <input type="url" name="linkedin" class="form-control" value="{{ profile.linkedin }}"/>
+          </div>
+        </div>
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-2"></i>Save Profile
+          </button>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Skills display -->
+  <div class="cc-card mb-4">
+    <div class="cc-card-header"><i class="bi bi-lightning me-2 text-warning"></i>Current Skills</div>
+    <div class="cc-card-body">
+      <div class="d-flex flex-wrap gap-2">
+        {% for skill in profile.skills %}
+          <span class="skill-tag">{{ skill }}</span>
+        {% else %}
+          <span class="text-muted">No skills added yet.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

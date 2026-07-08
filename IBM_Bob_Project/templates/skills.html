@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Skill Gap Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="max-width:960px">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="page-title mb-0"><i class="bi bi-lightning me-2 text-warning"></i>Skill Gap Analysis</h1>
+      <p class="text-muted small mt-1">Discover what skills to learn next for your target role</p>
+    </div>
+  </div>
+
+  <!-- Config card -->
+  <div class="cc-card mb-4">
+    <div class="cc-card-header"><i class="bi bi-sliders me-2 text-warning"></i>Configure Analysis</div>
+    <div class="cc-card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Target Role</label>
+          <input type="text" class="form-control" id="targetRoleInput"
+                 value="{{ profile.target_role }}" placeholder="e.g. Senior Data Scientist"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Your Current Skills</label>
+          <input type="text" class="form-control" id="skillsInput"
+                 value="{{ profile.skills | join(', ') }}"
+                 placeholder="Python, SQL, Machine Learning…"/>
+        </div>
+      </div>
+      <div class="mt-3">
+        <button class="btn btn-warning" onclick="runAnalysis()" id="analysisBtn">
+          <i class="bi bi-cpu me-2"></i>Run AI Analysis
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="d-none" id="loadingSkill">
+    <div class="cc-card mb-4">
+      <div class="cc-card-body text-center py-5">
+        <div class="spinner-border text-warning mb-3"></div>
+        <div class="fw-semibold">IBM Granite is analysing your skill gaps…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="d-none" id="skillResults">
+
+    <!-- Current skills display -->
+    <div class="cc-card mb-4">
+      <div class="cc-card-header"><i class="bi bi-check-circle me-2 text-success"></i>Your Current Skills</div>
+      <div class="cc-card-body">
+        <div id="currentSkillsTags" class="d-flex flex-wrap gap-2"></div>
+      </div>
+    </div>
+
+    <!-- AI Analysis -->
+    <div class="cc-card mb-4">
+      <div class="cc-card-header">
+        <i class="bi bi-robot me-2 text-info"></i>IBM Granite Skill Analysis
+      </div>
+      <div class="cc-card-body">
+        <div id="skillAnalysis" class="markdown-output"></div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="text-center">
+      <a href="{{ url_for('roadmap') }}" class="btn btn-success">
+        <i class="bi bi-map me-2"></i>Build Roadmap
+      </a>
+      <a href="{{ url_for('chat') }}" class="btn btn-info ms-2">
+        <i class="bi bi-chat-dots me-2"></i>Ask AI for Resources
+      </a>
+      <button class="btn btn-outline-warning ms-2" onclick="runAgain()">
+        <i class="bi bi-arrow-repeat me-1"></i>Re-analyse
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+async function runAnalysis() {
+  const btn = document.getElementById('analysisBtn');
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analysing…';
+  btn.disabled = true;
+  document.getElementById('loadingSkill').classList.remove('d-none');
+  document.getElementById('skillResults').classList.add('d-none');
+
+  const target = document.getElementById('targetRoleInput').value.trim();
+  const skills = document.getElementById('skillsInput').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  // Show current skills
+  const tagsEl = document.getElementById('currentSkillsTags');
+  tagsEl.innerHTML = '';
+  skills.forEach(s => {
+    const sp = document.createElement('span');
+    sp.className = 'skill-tag';
+    sp.textContent = s;
+    tagsEl.appendChild(sp);
+  });
+
+  try {
+    const r = await fetch('/api/skill-gap', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({target_role: target, skills})
+    });
+    const d = await r.json();
+    if (d.error) { alert(d.error); return; }
+    document.getElementById('skillAnalysis').innerHTML = marked.parse(d.analysis);
+    document.getElementById('skillResults').classList.remove('d-none');
+  } catch(e) {
+    alert('Error: ' + e.message);
+  } finally {
+    document.getElementById('loadingSkill').classList.add('d-none');
+    btn.innerHTML = '<i class="bi bi-cpu me-2"></i>Run AI Analysis';
+    btn.disabled = false;
+  }
+}
+
+function runAgain() {
+  document.getElementById('skillResults').classList.add('d-none');
+}
+</script>
+{% endblock %}

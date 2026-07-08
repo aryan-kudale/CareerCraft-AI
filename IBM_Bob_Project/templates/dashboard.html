@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+  <!-- Page header -->
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="page-title mb-0">
+        <i class="bi bi-grid me-2 text-primary"></i>Dashboard
+      </h1>
+      <p class="text-muted small mt-1">Welcome back, <strong>{{ profile.name }}</strong> 👋</p>
+    </div>
+    <a href="{{ url_for('chat') }}" class="btn btn-primary">
+      <i class="bi bi-chat-dots me-2"></i>Ask AI
+    </a>
+  </div>
+
+  <!-- ── KPI Cards ── -->
+  <div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card animate__animated animate__fadeInUp" style="animation-delay:0s">
+        <div class="kpi-icon bg-primary-subtle text-primary">
+          <i class="bi bi-file-earmark-check"></i>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-num" id="resumeScore">{{ stats.resume_score }}</div>
+          <div class="kpi-label">Resume Score</div>
+          <div class="progress mt-2" style="height:4px">
+            <div class="progress-bar bg-primary" style="width:{{ stats.resume_score }}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card animate__animated animate__fadeInUp" style="animation-delay:0.1s">
+        <div class="kpi-icon bg-success-subtle text-success">
+          <i class="bi bi-lightning-fill"></i>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-num">{{ stats.skills_count }}</div>
+          <div class="kpi-label">Skills Listed</div>
+          <div class="progress mt-2" style="height:4px">
+            <div class="progress-bar bg-success" style="width:{{ [stats.skills_count * 5, 100] | min }}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card animate__animated animate__fadeInUp" style="animation-delay:0.2s">
+        <div class="kpi-icon bg-warning-subtle text-warning">
+          <i class="bi bi-trophy-fill"></i>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-num" style="font-size:1.3rem">{{ stats.career_stage }}</div>
+          <div class="kpi-label">Career Stage</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card animate__animated animate__fadeInUp" style="animation-delay:0.3s">
+        <div class="kpi-icon bg-info-subtle text-info">
+          <i class="bi bi-bullseye"></i>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-num" style="font-size:1rem;line-height:1.4">{{ stats.target_role }}</div>
+          <div class="kpi-label">Target Role</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main content row ── -->
+  <div class="row g-4">
+
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+      <div class="cc-card h-100">
+        <div class="cc-card-header">
+          <i class="bi bi-rocket me-2 text-primary"></i>Quick Actions
+        </div>
+        <div class="cc-card-body">
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('resume') }}" class="btn btn-outline-primary text-start">
+              <i class="bi bi-upload me-2"></i>Analyse Resume
+            </a>
+            <a href="{{ url_for('roadmap') }}" class="btn btn-outline-success text-start">
+              <i class="bi bi-map me-2"></i>Generate Roadmap
+            </a>
+            <a href="{{ url_for('skills') }}" class="btn btn-outline-warning text-start">
+              <i class="bi bi-lightning me-2"></i>Skill Gap Analysis
+            </a>
+            <a href="{{ url_for('chat') }}" class="btn btn-outline-info text-start">
+              <i class="bi bi-chat-dots me-2"></i>Chat with AI
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skills overview -->
+    <div class="col-lg-4">
+      <div class="cc-card h-100">
+        <div class="cc-card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-lightning me-2 text-warning"></i>Your Skills</span>
+          <a href="{{ url_for('profile_page') }}" class="btn btn-xs btn-outline-secondary">Edit</a>
+        </div>
+        <div class="cc-card-body">
+          <div class="d-flex flex-wrap gap-2">
+            {% for skill in profile.skills %}
+            <span class="skill-tag">{{ skill }}</span>
+            {% endfor %}
+            {% if not profile.skills %}
+            <p class="text-muted small">No skills added yet.
+              <a href="{{ url_for('profile_page') }}">Add them in your profile →</a>
+            </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IBM watsonx status -->
+    <div class="col-lg-4">
+      <div class="cc-card h-100">
+        <div class="cc-card-header">
+          <i class="bi bi-cpu me-2 text-primary"></i>IBM watsonx.ai Status
+        </div>
+        <div class="cc-card-body">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div id="dashStatusDot" class="big-status-dot
+              {% if watsonx_status == 'ok' %}dot-green
+              {% elif watsonx_status == 'no_credentials' %}dot-yellow
+              {% else %}dot-red{% endif %}">
+            </div>
+            <div>
+              <div class="fw-semibold" id="dashStatusLabel">
+                {% if watsonx_status == 'ok' %}IBM Granite Live
+                {% elif watsonx_status == 'no_credentials' %}Demo Mode
+                {% else %}Connection Error{% endif %}
+              </div>
+              <small class="text-muted" id="dashStatusMsg">{{ watsonx_message }}</small>
+            </div>
+          </div>
+          <div class="status-details-box small text-muted">
+            <div><i class="bi bi-server me-1"></i>Endpoint: {{ profile.get('watsonx_url', 'us-south.ml.cloud.ibm.com') }}</div>
+            <div class="mt-1"><i class="bi bi-cpu me-1"></i>Model: IBM Granite 3 8B Instruct</div>
+          </div>
+          <button class="btn btn-sm btn-outline-primary w-100 mt-3" onclick="recheckStatus()">
+            <i class="bi bi-arrow-repeat me-1"></i>Re-check Connection
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile summary -->
+    <div class="col-lg-8">
+      <div class="cc-card">
+        <div class="cc-card-header d-flex justify-content-between">
+          <span><i class="bi bi-person-circle me-2 text-info"></i>Profile Summary</span>
+          <a href="{{ url_for('profile_page') }}" class="btn btn-xs btn-outline-secondary">Edit Profile</a>
+        </div>
+        <div class="cc-card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <dl class="row mb-0">
+                <dt class="col-5 text-muted">Name</dt><dd class="col-7">{{ profile.name }}</dd>
+                <dt class="col-5 text-muted">Title</dt><dd class="col-7">{{ profile.title }}</dd>
+                <dt class="col-5 text-muted">Experience</dt><dd class="col-7">{{ profile.experience }}</dd>
+                <dt class="col-5 text-muted">Location</dt><dd class="col-7">{{ profile.location }}</dd>
+              </dl>
+            </div>
+            <div class="col-md-6">
+              <dl class="row mb-0">
+                <dt class="col-5 text-muted">Email</dt><dd class="col-7">{{ profile.email }}</dd>
+                <dt class="col-5 text-muted">Target Role</dt><dd class="col-7">{{ profile.target_role }}</dd>
+                <dt class="col-5 text-muted">GitHub</dt>
+                <dd class="col-7">
+                  {% if profile.github %}
+                    <a href="{{ profile.github }}" target="_blank" class="text-decoration-none">
+                      <i class="bi bi-github me-1"></i>Profile
+                    </a>
+                  {% else %}–{% endif %}
+                </dd>
+                <dt class="col-5 text-muted">LinkedIn</dt>
+                <dd class="col-7">
+                  {% if profile.linkedin %}
+                    <a href="{{ profile.linkedin }}" target="_blank" class="text-decoration-none">
+                      <i class="bi bi-linkedin me-1"></i>Profile
+                    </a>
+                  {% else %}–{% endif %}
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="col-lg-4">
+      <div class="cc-card">
+        <div class="cc-card-header"><i class="bi bi-clock-history me-2 text-secondary"></i>Recent Activity</div>
+        <div class="cc-card-body p-0">
+          <ul class="activity-list">
+            <li><i class="bi bi-chat-dots text-info"></i><span>AI Chat session started</span><small>Just now</small></li>
+            <li><i class="bi bi-person-check text-success"></i><span>Profile created</span><small>Today</small></li>
+            <li><i class="bi bi-rocket text-primary"></i><span>CareerCraft AI launched</span><small>Today</small></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function recheckStatus() {
+  const btn = event.target;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Checking…';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    const dot = document.getElementById('dashStatusDot');
+    const lbl = document.getElementById('dashStatusLabel');
+    const msg = document.getElementById('dashStatusMsg');
+    dot.className = 'big-status-dot ' + (d.status === 'ok' ? 'dot-green' : d.status === 'no_credentials' ? 'dot-yellow' : 'dot-red');
+    lbl.textContent = d.status === 'ok' ? 'IBM Granite Live' : d.status === 'no_credentials' ? 'Demo Mode' : 'Connection Error';
+    msg.textContent = d.message;
+  } catch(e) { console.error(e); }
+  finally {
+    btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Re-check Connection';
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

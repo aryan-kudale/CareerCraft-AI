@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}AI Career Chat{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="max-width:960px">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="page-title mb-0"><i class="bi bi-chat-dots me-2 text-info"></i>AI Career Chat</h1>
+      <p class="text-muted small mt-1">Powered by IBM Granite — ask anything about your career</p>
+    </div>
+    <div class="d-flex gap-2">
+      <span id="chatStatusBadge" class="watson-badge
+        {% if watsonx_status == 'ok' %}watson-ok
+        {% elif watsonx_status == 'no_credentials' %}watson-demo
+        {% else %}watson-error{% endif %}">
+        <span class="status-dot"></span>
+        {% if watsonx_status == 'ok' %}IBM Granite Live
+        {% elif watsonx_status == 'no_credentials' %}Demo Mode
+        {% else %}Error{% endif %}
+      </span>
+      <button class="btn btn-sm btn-outline-secondary" onclick="clearChat()" title="Clear history">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Chat window -->
+  <div class="chat-window" id="chatWindow">
+    <!-- Welcome message -->
+    <div class="chat-msg assistant-msg animate__animated animate__fadeIn">
+      <div class="msg-avatar"><i class="bi bi-robot"></i></div>
+      <div class="msg-bubble">
+        <div class="msg-content">
+          👋 Hello, <strong>{{ profile.name }}</strong>! I'm CareerCraft AI, powered by IBM Granite.<br>
+          I can help you with resume advice, career planning, interview prep, skill development, and much more.<br>
+          <strong>What would you like to explore today?</strong>
+        </div>
+        <div class="msg-time">Now</div>
+      </div>
+    </div>
+
+    <!-- Load history -->
+    {% for msg in history %}
+    <div class="chat-msg {{ 'user-msg' if msg.role == 'user' else 'assistant-msg' }}">
+      {% if msg.role == 'assistant' %}<div class="msg-avatar"><i class="bi bi-robot"></i></div>{% endif %}
+      <div class="msg-bubble">
+        <div class="msg-content markdown-content">{{ msg.content }}</div>
+        <div class="msg-time">{{ msg.time }}</div>
+      </div>
+      {% if msg.role == 'user' %}<div class="msg-avatar user-avatar"><i class="bi bi-person-fill"></i></div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Suggested prompts -->
+  <div class="suggested-prompts mb-3" id="suggestedPrompts">
+    <button class="prompt-chip" onclick="sendSuggestion(this)">📄 Analyse my resume</button>
+    <button class="prompt-chip" onclick="sendSuggestion(this)">🗺️ Create my career roadmap</button>
+    <button class="prompt-chip" onclick="sendSuggestion(this)">⚡ What skills should I learn?</button>
+    <button class="prompt-chip" onclick="sendSuggestion(this)">💼 Help me prepare for interviews</button>
+    <button class="prompt-chip" onclick="sendSuggestion(this)">💰 Salary negotiation tips</button>
+  </div>
+
+  <!-- Input area -->
+  <div class="chat-input-area">
+    <div class="chat-input-wrapper">
+      <textarea id="chatInput" class="chat-textarea" placeholder="Ask CareerCraft AI anything about your career…"
+                rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </div>
+    <div class="chat-footer-hint text-muted small mt-2 text-center">
+      Press <kbd>Enter</kbd> to send, <kbd>Shift+Enter</kbd> for new line
+    </div>
+  </div>
+</div>
+
+<script>
+const chatWindow = document.getElementById('chatWindow');
+
+// Auto-scroll to bottom
+function scrollBottom() {
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+scrollBottom();
+
+// Render existing history markdown
+document.querySelectorAll('.markdown-content').forEach(el => {
+  el.innerHTML = marked.parse(el.textContent);
+});
+
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function sendSuggestion(btn) {
+  document.getElementById('chatInput').value = btn.textContent.replace(/^[^\w]+/, '').trim();
+  document.getElementById('suggestedPrompts').style.display = 'none';
+  sendMessage();
+}
+
+function appendMsg(role, content, time) {
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.className = `chat-msg ${isUser ? 'user-msg' : 'assistant-msg'} animate__animated animate__fadeInUp`;
+  div.innerHTML = `
+    ${!isUser ? '<div class="msg-avatar"><i class="bi bi-robot"></i></div>' : ''}
+    <div class="msg-bubble">
+      <div class="msg-content ${!isUser ? 'markdown-content' : ''}">${isUser ? escHtml(content) : marked.parse(content)}</div>
+      <div class="msg-time">${time}</div>
+    </div>
+    ${isUser ? '<div class="msg-avatar user-avatar"><i class="bi bi-person-fill"></i></div>' : ''}
+  `;
+  chatWindow.appendChild(div);
+  scrollBottom();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'chat-msg assistant-msg typing-indicator-wrap';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="msg-avatar"><i class="bi bi-robot"></i></div>
+    <div class="msg-bubble">
+      <div class="typing-indicator"><span></span><span></span><span></span></div>
+    </div>`;
+  chatWindow.appendChild(div);
+  scrollBottom();
+}
+
+function removeTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  input.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  const now = new Date().toLocaleTimeString('en', {hour:'2-digit', minute:'2-digit'});
+  appendMsg('user', msg, now);
+  showTyping();
+
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg})
+    });
+    const data = await r.json();
+    removeTyping();
+    if (data.error) {
+      appendMsg('assistant', `⚠️ Error: ${data.error}`, now);
+    } else {
+      appendMsg('assistant', data.response, now);
+    }
+  } catch(e) {
+    removeTyping();
+    appendMsg('assistant', '⚠️ Network error. Please check your connection and try again.', now);
+  } finally {
+    btn.disabled = false;
+    input.disabled = false;
+    input.focus();
+  }
+}
+
+async function clearChat() {
+  if (!confirm('Clear chat history?')) return;
+  await fetch('/api/clear-chat', {method:'POST'});
+  chatWindow.innerHTML = '';
+  document.getElementById('suggestedPrompts').style.display = '';
+  appendMsg('assistant', '👋 Chat cleared! How can I help you today?',
+    new Date().toLocaleTimeString('en', {hour:'2-digit', minute:'2-digit'}));
+}
+</script>
+{% endblock %}

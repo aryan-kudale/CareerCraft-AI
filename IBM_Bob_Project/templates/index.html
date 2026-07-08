@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<!-- ============================================================
+     HERO
+============================================================ -->
+<section class="hero-section">
+  <div class="hero-bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <div class="container py-5">
+    <div class="row align-items-center min-vh-80 py-5">
+      <div class="col-lg-6 animate__animated animate__fadeInLeft">
+        <div class="hero-badge mb-3">
+          <span class="badge-dot"></span>
+          <span>Powered by IBM Granite AI</span>
+        </div>
+        <h1 class="hero-title">
+          Craft Your <span class="gradient-text">Dream Career</span>
+          <br>with AI Intelligence
+        </h1>
+        <p class="hero-subtitle mt-3">
+          CareerCraft AI is your personalised career coach — powered by IBM watsonx.ai Granite models.
+          Analyse your resume, map your roadmap, identify skill gaps, and land your dream role.
+        </p>
+        <div class="d-flex flex-wrap gap-3 mt-4">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg hero-btn-primary">
+            <i class="bi bi-rocket-takeoff me-2"></i>Get Started Free
+          </a>
+          <a href="{{ url_for('chat') }}" class="btn btn-outline-primary btn-lg hero-btn-outline">
+            <i class="bi bi-chat-dots me-2"></i>Try AI Chat
+          </a>
+        </div>
+        <div class="hero-stats mt-5 d-flex flex-wrap gap-4">
+          <div class="stat-item">
+            <div class="stat-num">10K+</div>
+            <div class="stat-label">Careers Crafted</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-num">95%</div>
+            <div class="stat-label">Success Rate</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-num">IBM</div>
+            <div class="stat-label">Granite AI</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 mt-5 mt-lg-0 animate__animated animate__fadeInRight">
+        <div class="hero-card-stack">
+          <!-- Floating card 1 -->
+          <div class="hero-card hero-card-main">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="hc-icon"><i class="bi bi-robot"></i></div>
+              <div>
+                <div class="fw-bold">CareerCraft AI</div>
+                <small class="text-muted">IBM Granite Assistant</small>
+              </div>
+              <span class="ms-auto watson-badge watson-ok">
+                <span class="status-dot"></span>Live
+              </span>
+            </div>
+            <p class="mb-0 text-muted small">
+              "Based on your profile, I recommend focusing on <strong>Cloud Architecture</strong>
+              and <strong>System Design</strong> to reach your target role within 9 months…"
+            </p>
+          </div>
+          <!-- Floating card 2 -->
+          <div class="hero-card hero-card-float hero-card-2">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-graph-up-arrow text-success"></i>
+              <span class="fw-semibold small">Resume Score</span>
+            </div>
+            <div class="progress cc-progress mb-1" style="height:8px">
+              <div class="progress-bar bg-success" style="width:78%"></div>
+            </div>
+            <small class="text-muted">78 / 100 – Great!</small>
+          </div>
+          <!-- Floating card 3 -->
+          <div class="hero-card hero-card-float hero-card-3">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-lightning-fill text-warning"></i>
+              <span class="fw-semibold small">Skills to Learn</span>
+            </div>
+            <div class="mt-2 d-flex flex-wrap gap-1">
+              <span class="badge bg-primary-subtle text-primary">Kubernetes</span>
+              <span class="badge bg-success-subtle text-success">Terraform</span>
+              <span class="badge bg-warning-subtle text-warning">GenAI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FEATURES
+============================================================ -->
+<section class="features-section py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="section-title">Everything You Need to <span class="gradient-text">Succeed</span></h2>
+      <p class="section-subtitle text-muted">AI-powered tools designed for modern career growth</p>
+    </div>
+    <div class="row g-4">
+      {% set features = [
+        ('bi-file-earmark-person', 'primary', 'Resume Analyser', 'Upload your resume for instant AI-powered scoring, ATS optimisation tips, and personalised improvement suggestions.', 'resume'),
+        ('bi-map', 'success', 'Career Roadmap', 'Get a step-by-step personalised roadmap from your current role to your dream position with timelines and milestones.', 'roadmap'),
+        ('bi-lightning', 'warning', 'Skill Gap Analysis', 'Discover exactly which skills you need to develop and get curated learning resources for each gap.', 'skills'),
+        ('bi-chat-dots', 'info', 'AI Career Chat', 'Chat with IBM Granite AI for real-time career guidance, interview prep, salary negotiation tips, and more.', 'chat'),
+        ('bi-grid', 'purple', 'Smart Dashboard', 'Track your career progress with a beautiful, data-driven dashboard showing your scores, goals, and achievements.', 'dashboard'),
+        ('bi-person-badge', 'danger', 'Profile Manager', 'Manage your professional profile, showcase your skills, and let AI tailor advice specifically to your background.', 'profile_page'),
+      ] %}
+      {% for icon, color, title, desc, endpoint in features %}
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card animate__animated animate__fadeInUp" style="animation-delay:{{ loop.index0 * 0.1 }}s">
+          <div class="feature-icon feature-icon-{{ color }}">
+            <i class="bi {{ icon }}"></i>
+          </div>
+          <h5 class="mt-3 fw-bold">{{ title }}</h5>
+          <p class="text-muted small">{{ desc }}</p>
+          <a href="{{ url_for(endpoint) }}" class="btn btn-sm btn-outline-{{ color if color != 'purple' else 'secondary' }} mt-2">
+            Explore <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     IBM GRANITE BANNER
+============================================================ -->
+<section class="ibm-banner py-5">
+  <div class="container">
+    <div class="ibm-banner-inner">
+      <div class="row align-items-center">
+        <div class="col-lg-8">
+          <h3 class="fw-bold mb-2">
+            <i class="bi bi-cpu me-2 text-primary"></i>
+            Powered by IBM Granite AI on watsonx.ai
+          </h3>
+          <p class="mb-0 text-muted">
+            CareerCraft uses IBM's enterprise-grade Granite language models — trusted by Fortune 500 companies —
+            to deliver accurate, responsible, and actionable career intelligence.
+          </p>
+        </div>
+        <div class="col-lg-4 mt-4 mt-lg-0 text-lg-end">
+          <div class="d-flex align-items-center justify-content-lg-end gap-3">
+            <div id="liveStatusIndicator" class="d-flex align-items-center gap-2 watson-badge
+              {% if watsonx_status == 'ok' %}watson-ok{% elif watsonx_status == 'no_credentials' %}watson-demo{% else %}watson-error{% endif %}">
+              <span class="status-dot"></span>
+              <span id="liveStatusText">
+                {% if watsonx_status == 'ok' %}IBM Granite Live
+                {% elif watsonx_status == 'no_credentials' %}Demo Mode
+                {% else %}Connection Issue{% endif %}
+              </span>
+            </div>
+            <button class="btn btn-sm btn-outline-primary" onclick="checkStatus()">
+              <i class="bi bi-arrow-repeat me-1"></i>Check
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CTA
+============================================================ -->
+<section class="cta-section py-5">
+  <div class="container text-center">
+    <h2 class="fw-bold mb-3">Ready to Transform Your Career?</h2>
+    <p class="text-muted mb-4">Join thousands who've used CareerCraft AI to land their dream roles.</p>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-5">
+      <i class="bi bi-rocket-takeoff me-2"></i>Launch Dashboard
+    </a>
+  </div>
+</section>
+
+<script>
+async function checkStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    const el = document.getElementById('liveStatusIndicator');
+    const txt = document.getElementById('liveStatusText');
+    el.className = 'd-flex align-items-center gap-2 watson-badge ' +
+      (d.status === 'ok' ? 'watson-ok' : d.status === 'no_credentials' ? 'watson-demo' : 'watson-error');
+    txt.textContent = d.status === 'ok' ? 'IBM Granite Live' :
+                      d.status === 'no_credentials' ? 'Demo Mode' : 'Connection Issue';
+  } catch(e) { console.error(e); }
+}
+</script>
+{% endblock %}
