@@ -1,0 +1,7 @@
+{
+  "name": "CareerCraft",
+  "description": "AI-Powered Personalized Career Guidance Assistant using IBM watsonx.ai Studio, IBM Granite Foundation Model, IBM watsonx Orchestrate and IBM Cloud Lite.",
+  "version": "1.0.0",
+  "author": "Aryan Kudale",
+  "platform": "IBM Cloud Lite"
+}
